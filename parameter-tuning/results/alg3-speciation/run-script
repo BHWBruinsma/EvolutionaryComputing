@@ -1,0 +1,14 @@
+#!/bin/bash
+INPUT=parameters.csv
+OLDIFS=$IFS
+IFS=,
+[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
+while read pos pop parent rank mutate mating crossover 
+do
+	out=$(java -Dvar1="$pop" -Dvar2="$parent" -Dvar3="$rank" -Dvar4="$mutate" -Dvar5="$mating" -Dvar6="$crossover" -jar testrun.jar -submission=player100 -evaluation=SchaffersEvaluation -seed=1)
+	echo -e "$out\n" >> file.csv
+	echo $pos
+
+done < $INPUT
+IFS=$OLDIFS
+
