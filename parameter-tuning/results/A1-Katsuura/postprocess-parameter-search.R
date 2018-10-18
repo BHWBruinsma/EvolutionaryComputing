@@ -11,8 +11,8 @@ dat2 <- dat[dat$X1=='Score:',]
 x <- dat2$X2
 
 full <- cbind(parameters, x)
-colnames(full) <- c('rank','population_size', 'parent_size', 'rank' ,'mutation_variation', 'mating', 'crossover', 'score')
-average <- aggregate(full[,2:8], list(full$rank), mean)
+colnames(full) <- c('rank','population_size', 'parent_size', 'rank' ,'mutation_variation', 'mating', 'crossover_rate', 'mutation_rate', 'score')
+average <- aggregate(full[,2:length(full[1,])], list(full$rank), mean)
 final <- average[rev(order(average$score)),]
 
-write.csv(final, 'result-Schaffers-alg3.csv')
+write.csv(final, 'A1-Schaffers-result.csv')
