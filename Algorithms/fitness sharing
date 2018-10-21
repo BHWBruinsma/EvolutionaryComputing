@@ -1,7 +1,6 @@
 // genotype fitness sharing
 		// initiate matrixes
 		//public double [][] fitness_sharing(int populationsize, int dimension, double [][] arr, double [] fitn) {
-		double[][] difference = new double[populationsize][dimension];
 		double [] distance = new double [populationsize];
 		double[] sharedfitness = new double[populationsize];
 		int a = 1;
@@ -12,18 +11,19 @@
 				double sum = 0;
 				for (int k = 0; k < dimension; k++){
 					//take the normalized square of the difference
-					difference[j][k] = (((arr[i][k] - arr[j][k])/10) * ((arr[i][k] - arr[j][k])/10));
-					//System.out.println(difference[j][k]);
-				}
-				for (int l = 0; l < dimension; l++){
-					sum += difference[j][l];
+					sum += (((arr[i][k] - arr[j][k])/10) * ((arr[i][k] - arr[j][k]))/10);
+					//System.out.println(Math.sqrt(sum));
 				}
 				if (Math.sqrt(sum) <= sigmashare) {
 					distance[j] = (1-Math.pow((Math.sqrt(sum)/sigmashare),a));
+					//System.out.println(distance[j]);
+
 				}
 				else{
 					distance[j] = 0;
 				}
+				System.out.println(distance[j]);
+				
 			}
 			for (int m = 0; m < populationsize; m++){
 				mi += distance[m];
