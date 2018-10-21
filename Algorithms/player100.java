@@ -479,6 +479,145 @@ public class player100 implements ContestSubmission
 		}
 	}
 	
+	
+	public ArrayList<ArrayList> get_euclidean(double[][] population, double[][] children){
+
+		// Initialize parameters, array list and map
+		double distance;
+		double pop_fit[];
+		Random rand =  new Random();
+		
+		// List with list of Euclidean distances per child. Index of list is index of child 
+		ArrayList<ArrayList<Double>> child_list = new ArrayList<ArrayList<Double>>();
+		
+		// List with list of indexes of the individuals in de population. Index of list is index of child
+		ArrayList<ArrayList<Integer>> index = new ArrayList<ArrayList<Integer>>();
+		
+		// List of all euclidean distances of child and random individual of population
+		ArrayList euclidean_distance = new ArrayList(); 
+
+		// List with random indexes of individuals of population list
+		ArrayList<Integer> randomIndex_list = new ArrayList<Integer>();
+		
+		// List of genotypes
+		ArrayList gen_pop = new ArrayList(); 
+
+		// For every child's genotype
+		for (int i = 0; i < children.length; i++) {
+			
+			// Clean the lists for new round
+			euclidean_distance = new ArrayList<Double>();
+			randomIndex_list = new ArrayList<Integer>();
+			
+			// Get six random indexes of individuals of population!!!!!!!!!!!!!!
+		    for(int j = 0; j < 10; j ++) {
+		    	gen_pop = new ArrayList<Double>();
+		    	
+		    	final int randomIndex = rand.nextInt(population.length);
+ 	
+		    	// Find genotype of random selected population
+				for (double y : population[randomIndex])
+				{
+					gen_pop.add(y);			
+				}
+
+				// Convert Double to double
+				pop_fit = convertAsPrimitiveArray(gen_pop);
+			    
+			    // Calculate Euclidean Distance
+				distance = calculateDistance( children[i], pop_fit);
+				
+				euclidean_distance.add(distance);
+				randomIndex_list.add(randomIndex);
+				
+		    }
+		    // Add lists to the lists
+			child_list.add(euclidean_distance);
+			index.add(randomIndex_list);
+		}
+		
+	    ArrayList<ArrayList> temp = new ArrayList<ArrayList>();
+	    temp.add(child_list);
+	    temp.add(index);
+	
+		return temp;
+	}
+	
+	
+	
+	public double[][] crowding_replacement(ArrayList<ArrayList<Double>> child_list, ArrayList<ArrayList<Integer>> index, double[][] population, double[][] children) {
+		
+		int child_counter = 0;
+		int child_counter1 = 0;
+		
+		// For every child 
+		for(ArrayList<Double> innerList : child_list) {
+			int pop_counter = 0;
+			
+			// For every eucldistance value of that child
+		    for(Double number : innerList) {
+		        
+		        // If the distance value is lower than 6!!!!!!!!!!!!!!!
+		        if(number < 6) {
+
+		        	// For every child in index
+		        	for(ArrayList<Integer> child : index) {
+		        		
+		        		// If we are at the same child as in child_list
+		        		if(child_counter1 == child_counter) {
+		        			int pop_counter1 = 0;
+		        			
+		        			// For every index of the individuals of the population 
+		        			for(Integer ind : child) {
+		        				
+		        				// If index is found of individual 
+		        				if(pop_counter1 == pop_counter) {
+		        					
+		        					
+		        					///////////////////!!!
+		        		        	double[] children_fitness;
+		        		        	children_fitness = calculate_fitness(children, parentsSize/2);
+		        					
+		        					
+		        					// Change the individual of the population with the child
+		        					population[ind] = children[child_counter];
+		        					
+		        				}	
+		        				pop_counter1 ++;		        				
+		        			}
+		        			break;
+		        		}
+		        		child_counter1++;
+		        	}
+		        }
+		        pop_counter ++;
+	
+		    }
+		    child_counter++;
+		}
+	
+		return population;
+	}
+	
+	
+	// Calculate Euclidean Distance
+	public static double calculateDistance (double[] array1, double[] array2) {
+		double Sum = 0.0;
+		 
+		for (int i=0;i<array1.length;i++) {
+			Sum = Sum+Math.pow((array1[i]-array2[i]),2.0);
+		}
+		return Math.sqrt(Sum);
+	}
+	
+	// Convert Double to double
+	public double[] convertAsPrimitiveArray(ArrayList<Double> list){
+	    double[] intArray = new double[10];
+	    for(int i = 0; i < list.size(); i++) intArray[i] = list.get(i);
+	    return intArray;
+	}
+	
+	
 	public void run()
 	{	
 		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
@@ -503,6 +642,7 @@ public class player100 implements ContestSubmission
         double pop_fitness[];
         pop_fitness = calculate_fitness(population, populationSize);
         
+        
         while(evals<evaluations_limit_){
             // Select parents
         	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
@@ -512,161 +652,173 @@ public class player100 implements ContestSubmission
         	double[][] children;
         	children = crossOverTwo(parents, parentsSize/2);
         	
-        	//Apply mutation
-        	gaussianMutation(children);
+         	//Apply mutation
+         	gaussianMutation(children);
         	
         	//Calculate fitness children for fitness based selection
         	double[] children_fitness;
         	children_fitness = calculate_fitness(children, parentsSize/2);
         	
+         	//Apply crowding
+         	ArrayList<ArrayList> temp = new ArrayList<ArrayList>();
+     	    temp = get_euclidean(population, children);
+     	    
+     	    ArrayList<ArrayList<Double>> child_list = new ArrayList<ArrayList<Double>>();
+     	    child_list = temp.get(0);
+ 		    
+ 		    ArrayList<ArrayList<Integer>> index = new ArrayList<ArrayList<Integer>>();
+     	    index = temp.get(1);
+    
+     	    // Population after crowding
+     	    double[][] pop_after_crowding;
+     	    pop_after_crowding = crowding_replacement(child_list, index, population, children);
+  
             // population selection (lambda,mu)
-            fitness_replacement(pop_fitness, children_fitness, population, children);
+            //fitness_replacement(pop_fitness, children_fitness, population, children);
             evals++;;
         } 
 	}
-	
-	public void run_mating()
-	{	
-		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
-	    parentsSize = (int) Double.parseDouble(System.getProperty("var2")); 
-		s = Double.parseDouble(System.getProperty("var3")); 
-		mutationVariation = Double.parseDouble(System.getProperty("var4"));
-		sigma_mating = Double.parseDouble(System.getProperty("var5")); 
-		//crossOver = Double.parseDouble(System.getProperty("var6"));
-		crossOverRate = Double.parseDouble(System.getProperty("var6"));
-		mutationRate = Double.parseDouble(System.getProperty("var7"));
-		sigmaShare = Double.parseDouble(System.getProperty("var8"));
-		alphaShare = (int) Double.parseDouble(System.getProperty("var9"));
-		
-		
-		// Run your algorithm here
-        int evals = 0;
-        
-        // init population
-        double[][] population = init_population(populationSize);
-        
-        // calculate fitness of population
-        double pop_fitness[];
-        pop_fitness = calculate_fitness(population, populationSize);
-        
-        while(evals<evaluations_limit_){
-            // Select parents
-        	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
-        	double[][] parents = rank_roulette_wheel_speciation(population, pop_fitness, parentsSize);
-        	
-            // Apply crossover
-        	double[][] children;
-        	children = crossOverTwo(parents, parentsSize/2);
-        	
-        	//Apply mutation
-        	gaussianMutation(children);
-        	
-        	//Calculate fitness children for fitness based selection
-        	double[] children_fitness;
-        	children_fitness = calculate_fitness(children, parentsSize/2);
-        	
-            // population selection (lambda,mu)
-            fitness_replacement(pop_fitness, children_fitness, population, children);
-            evals++;;
-        } 
-	}
-	
-	
-	public void run_sharing()
-	{	
-		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
-	    parentsSize = (int) Double.parseDouble(System.getProperty("var2")); 
-		s = Double.parseDouble(System.getProperty("var3")); 
-		mutationVariation = Double.parseDouble(System.getProperty("var4"));
-		sigma_mating = Double.parseDouble(System.getProperty("var5")); 
-		//crossOver = Double.parseDouble(System.getProperty("var6"));
-		crossOverRate = Double.parseDouble(System.getProperty("var6"));
-		mutationRate = Double.parseDouble(System.getProperty("var7"));
-		sigmaShare = Double.parseDouble(System.getProperty("var8"));
-		alphaShare = (int) Double.parseDouble(System.getProperty("var9"));
-		
-		
-		// Run your algorithm here
-        int evals = 0;
-        
-        // init population
-        double[][] population = init_population(populationSize);
-        
-        // calculate fitness of population
-        double pop_fitness[];
-        pop_fitness = calculate_fitness(population, populationSize);
-        double[] fitness_sharing = fitness_sharing(population, pop_fitness);
-        
-        while(evals<evaluations_limit_){
-            // Select parents
-        	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
-        	double[][] parents = rank_roulette_wheel(population, fitness_sharing, parentsSize);
-        	
-            // Apply crossover
-        	double[][] children;
-        	children = crossOverTwo(parents, parentsSize/2);
-        	
-        	//Apply mutation
-        	gaussianMutation(children);
-        	
-        	//Calculate fitness children for fitness based selection
-        	double[] children_fitness;
-        	children_fitness = calculate_fitness(children, parentsSize/2);
-        	
-        	double[] fitness_children_sharing = fitness_sharing(children, children_fitness);        
-            // population selection (lambda,mu)
-            fitness_replacement(fitness_sharing, fitness_children_sharing, population, children);
-            evals++;;
-        } 
-	}
-	
-	
-	public void run_mate_sharing()
-	{	
-		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
-	    parentsSize = (int) Double.parseDouble(System.getProperty("var2")); 
-		s = Double.parseDouble(System.getProperty("var3")); 
-		mutationVariation = Double.parseDouble(System.getProperty("var4"));
-		sigma_mating = Double.parseDouble(System.getProperty("var5")); 
-		//crossOver = Double.parseDouble(System.getProperty("var6"));
-		crossOverRate = Double.parseDouble(System.getProperty("var6"));
-		mutationRate = Double.parseDouble(System.getProperty("var7"));
-		sigmaShare = Double.parseDouble(System.getProperty("var8"));
-		alphaShare = (int) Double.parseDouble(System.getProperty("var9"));
-		
-		
-		// Run your algorithm here
-        int evals = 0;
-        
-        // init population
-        double[][] population = init_population(populationSize);
-        
-        // calculate fitness of population
-        double pop_fitness[];
-        pop_fitness = calculate_fitness(population, populationSize);
-        double[] fitness_sharing = fitness_sharing(population, pop_fitness);
-        
-        while(evals<evaluations_limit_){
-            // Select parents
-        	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
-        	double[][] parents = rank_roulette_wheel_speciation(population, fitness_sharing, parentsSize);
-        	
-            // Apply crossover
-        	double[][] children;
-        	children = crossOverTwo(parents, parentsSize/2);
-        	
-        	//Apply mutation
-        	gaussianMutation(children);
-        	
-        	//Calculate fitness children for fitness based selection
-        	double[] children_fitness;
-        	children_fitness = calculate_fitness(children, parentsSize/2);
-        	
-        	double[] fitness_children_sharing = fitness_sharing(children, children_fitness);        
-            // population selection (lambda,mu)
-            fitness_replacement(fitness_sharing, fitness_children_sharing, population, children);
-            evals++;;
-        } 
-	}
-	
-}
+ 	
+ 	public void run_mating()
+ 	{	
+ 		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
+ 	    parentsSize = (int) Double.parseDouble(System.getProperty("var2")); 
+ 		s = Double.parseDouble(System.getProperty("var3")); 
+ 		mutationVariation = Double.parseDouble(System.getProperty("var4"));
+ 		sigma_mating = Double.parseDouble(System.getProperty("var5")); 
+ 		//crossOver = Double.parseDouble(System.getProperty("var6"));
+ 		crossOverRate = Double.parseDouble(System.getProperty("var6"));
+ 		mutationRate = Double.parseDouble(System.getProperty("var7"));
+ 		sigmaShare = Double.parseDouble(System.getProperty("var8"));
+ 		alphaShare = (int) Double.parseDouble(System.getProperty("var9"));
+ 		
+ 		
+ 		// Run your algorithm here
+         int evals = 0;
+         
+         // init population
+         double[][] population = init_population(populationSize);
+         
+         // calculate fitness of population
+         double pop_fitness[];
+         pop_fitness = calculate_fitness(population, populationSize);
+         
+         while(evals<evaluations_limit_){
+             // Select parents
+         	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
+         	double[][] parents = rank_roulette_wheel_speciation(population, pop_fitness, parentsSize);
+         	
+             // Apply crossover
+         	double[][] children;
+         	children = crossOverTwo(parents, parentsSize/2);
+         	
+         	//Apply mutation
+         	gaussianMutation(children);
+         	
+         	//Calculate fitness children for fitness based selection
+         	double[] children_fitness;
+         	children_fitness = calculate_fitness(children, parentsSize/2);
+         	
+             // population selection (lambda,mu)
+             fitness_replacement(pop_fitness, children_fitness, population, children);
+             evals++;;
+         } 
+ 	}
+ 	
+ 	
+ 	public void run_sharing()
+ 	{	
+ 		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
+ 	    parentsSize = (int) Double.parseDouble(System.getProperty("var2")); 
+ 		s = Double.parseDouble(System.getProperty("var3")); 
+ 		mutationVariation = Double.parseDouble(System.getProperty("var4"));
+ 		sigma_mating = Double.parseDouble(System.getProperty("var5")); 
+ 		//crossOver = Double.parseDouble(System.getProperty("var6"));
+ 		crossOverRate = Double.parseDouble(System.getProperty("var6"));
+ 		mutationRate = Double.parseDouble(System.getProperty("var7"));
+ 		sigmaShare = Double.parseDouble(System.getProperty("var8"));
+ 		alphaShare = (int) Double.parseDouble(System.getProperty("var9"));
+ 		
+ 		
+ 		// Run your algorithm here
+         int evals = 0;
+         
+         // init population
+         double[][] population = init_population(populationSize);
+         
+         // calculate fitness of population
+         double pop_fitness[];
+         pop_fitness = calculate_fitness(population, populationSize);
+         double[] fitness_sharing = fitness_sharing(population, pop_fitness);
+         
+         while(evals<evaluations_limit_){
+             // Select parents
+         	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
+         	double[][] parents = rank_roulette_wheel(population, fitness_sharing, parentsSize);
+         	
+             // Apply crossover
+         	double[][] children;
+         	children = crossOverTwo(parents, parentsSize/2);
+         	
+         	//Apply mutation
+         	gaussianMutation(children);
+         	
+         	//Calculate fitness children for fitness based selection
+         	double[] children_fitness;
+         	children_fitness = calculate_fitness(children, parentsSize/2);
+         	
+         	double[] fitness_children_sharing = fitness_sharing(children, children_fitness);        
+             // population selection (lambda,mu)
+             fitness_replacement(fitness_sharing, fitness_children_sharing, population, children);
+             evals++;;
+         } 
+ 	}
+ 	
+ 	
+ 	public void run_mate_sharing()
+ 	{	
+ 		populationSize = (int) Double.parseDouble(System.getProperty("var1"));
+ 	    parentsSize = (int) Double.parseDouble(System.getProperty("var2")); 
+ 		s = Double.parseDouble(System.getProperty("var3")); 
+ 		mutationVariation = Double.parseDouble(System.getProperty("var4"));
+ 		sigma_mating = Double.parseDouble(System.getProperty("var5")); 
+ 		//crossOver = Double.parseDouble(System.getProperty("var6"));
+ 		crossOverRate = Double.parseDouble(System.getProperty("var6"));
+ 		mutationRate = Double.parseDouble(System.getProperty("var7"));
+ 		sigmaShare = Double.parseDouble(System.getProperty("var8"));
+ 		alphaShare = (int) Double.parseDouble(System.getProperty("var9"));
+ 		
+ 		
+ 		// Run your algorithm here
+         int evals = 0;
+         
+         // init population
+         double[][] population = init_population(populationSize);
+         
+         // calculate fitness of population
+         double pop_fitness[];
+         pop_fitness = calculate_fitness(population, populationSize);
+         double[] fitness_sharing = fitness_sharing(population, pop_fitness);
+         
+         while(evals<evaluations_limit_){
+             // Select parents
+         	//double[] fitness_sharing = fitness_sharing(population, pop_fitness);
+         	double[][] parents = rank_roulette_wheel_speciation(population, fitness_sharing, parentsSize);
+         	
+             // Apply crossover
+         	double[][] children;
+         	children = crossOverTwo(parents, parentsSize/2);
+         	
+         	//Apply mutation
+         	gaussianMutation(children);
+         	
+         	//Calculate fitness children for fitness based selection
+         	double[] children_fitness;
+         	children_fitness = calculate_fitness(children, parentsSize/2);
+         	
+         	double[] fitness_children_sharing = fitness_sharing(children, children_fitness);        
+             // population selection (lambda,mu)
+             fitness_replacement(fitness_sharing, fitness_children_sharing, population, children);
+             evals++;;
+         } 
+ 	}
